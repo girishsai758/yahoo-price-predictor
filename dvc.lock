@@ -1,0 +1,79 @@
+schema: '2.0'
+stages:
+  data_ingestion:
+    cmd: python src/data/data_ingestion.py
+    deps:
+    - path: src/data/data_ingestion.py
+      hash: md5
+      md5: 497afa47625e25bcfb8d8a1dd4683b21
+      size: 4760
+    params:
+      params.yaml:
+        data_ingestion.test_size: 0.25
+    outs:
+    - path: data/raw
+      hash: md5
+      md5: a2b06accf61245898bb17de81b1900c4.dir
+      size: 63334
+      nfiles: 2
+  model_building:
+    cmd: python src/model/model_building.py
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: a2b06accf61245898bb17de81b1900c4.dir
+      size: 63334
+      nfiles: 2
+    - path: src/model/model_building.py
+      hash: md5
+      md5: b111c0df84ba40bfd938c7c53f83119c
+      size: 11237
+    outs:
+    - path: artifacts/model_weights.pth
+      hash: md5
+      md5: 9360577f54151e017880bf827fa3e299
+      size: 531224
+    - path: artifacts/scaler.pkl
+      hash: md5
+      md5: bd355b6f06dd7c3021d6ab7b3dd64462
+      size: 525
+  model_evaluation:
+    cmd: python src/model/model_evaluation.py
+    deps:
+    - path: artifacts/model_weights.pth
+      hash: md5
+      md5: 9360577f54151e017880bf827fa3e299
+      size: 531224
+    - path: artifacts/scaler.pkl
+      hash: md5
+      md5: bd355b6f06dd7c3021d6ab7b3dd64462
+      size: 525
+    - path: data/raw
+      hash: md5
+      md5: a2b06accf61245898bb17de81b1900c4.dir
+      size: 63334
+      nfiles: 2
+    - path: src/model/model_evaluation.py
+      hash: md5
+      md5: be652d197fa4b3b56b86c5fe2aa7091e
+      size: 13647
+    outs:
+    - path: reports/experiment_info.json
+      hash: md5
+      md5: 88623776b6d651e2a2d8762f6ae47f6e
+      size: 82
+    - path: reports/metrics.json
+      hash: md5
+      md5: d17ca70ac32c82ae69b6d8821dcf8936
+      size: 36
+  model_registration:
+    cmd: python src/model/registermodel.py
+    deps:
+    - path: reports/experiment_info.json
+      hash: md5
+      md5: 88623776b6d651e2a2d8762f6ae47f6e
+      size: 82
+    - path: src/model/registermodel.py
+      hash: md5
+      md5: 34860473ab52808c581640a75f350ea4
+      size: 3344
