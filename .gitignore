@@ -97,3 +97,4 @@ models/
 artifacts/
 #scaler.pkl has been to moved to yahoo-price-predictor since it is not stored anywherwe.
 test.py/
+credentials.txt/
