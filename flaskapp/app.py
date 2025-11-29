@@ -313,25 +313,25 @@ app = Flask(__name__)
 # Below code block is for production use
 # -------------------------------------------------------------------------------------
 # # Set up DagsHub credentials for MLflow tracking
-# dagshub_token = os.getenv("CAPSTONE_TEST")
-# if not dagshub_token:
-#     raise EnvironmentError("CAPSTONE_TEST environment variable is not set")
+dagshub_token = os.getenv("yahoo")
+if not dagshub_token:
+    raise EnvironmentError("yahoo environment variable is not set")
 
-# os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
-# os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
+os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
+os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
 
-# dagshub_url = "https://dagshub.com"
-# repo_owner = "girishsai758"
-# repo_name = "CAPSTONE"
+dagshub_url = "https://dagshub.com"
+repo_owner = "girishsai758"
+repo_name = "yahoo-price-predictor"
 
-# #Set up MLflow tracking URI
-# mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
+#Set up MLflow tracking URI
+mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
 # -------------------------------------------------------------------------------------
 
 # Below code block is for local use
 # -------------------------------------------------------------------------------------
-mlflow.set_tracking_uri('https://dagshub.com/girishsai758/yahoo-price-predictor.mlflow')
-dagshub.init(repo_owner='girishsai758', repo_name='yahoo-price-predictor', mlflow=True)
+# mlflow.set_tracking_uri('https://dagshub.com/girishsai758/yahoo-price-predictor.mlflow')
+# dagshub.init(repo_owner='girishsai758', repo_name='yahoo-price-predictor', mlflow=True)
 # -------------------------------------------------------------------------------------
 model_name = "my_model"
 def get_latest_model_version(model_name):
