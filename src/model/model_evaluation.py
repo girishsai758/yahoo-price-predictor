@@ -2,6 +2,9 @@ import setuptools
 import os
 import re
 import string
+
+
+
 import pandas as pd
 pd.set_option('future.no_silent_downcasting', True)
 import numpy as np
@@ -37,26 +40,26 @@ warnings.simplefilter("ignore", UserWarning)
 
 # Below code block is for production use
 # -------------------------------------------------------------------------------------
-# # Set up DagsHub credentials for MLflow tracking
-# dagshub_token = os.getenv("YAHOO")
-# if not dagshub_token:
-#     raise EnvironmentError("yahoo environment variable is not set")
+# Set up DagsHub credentials for MLflow tracking
+dagshub_token = os.getenv("YAHOO")
+if not dagshub_token:
+    raise EnvironmentError("yahoo environment variable is not set")
 
-# os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
-# os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
+os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
+os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
 
-# dagshub_url = "https://dagshub.com"
-# repo_owner = "girishsai758"
-# repo_name = "yahoo-price-predictor"
+dagshub_url = "https://dagshub.com"
+repo_owner = "girishsai758"
+repo_name = "yahoo-price-predictor"
 
-# #Set up MLflow tracking URI
-# mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
+#Set up MLflow tracking URI
+mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
 # -------------------------------------------------------------------------------------
 
 # Below code block is for local use
 # -------------------------------------------------------------------------------------
-mlflow.set_tracking_uri('https://dagshub.com/girishsai758/yahoo-price-predictor.mlflow')
-dagshub.init(repo_owner='girishsai758', repo_name='yahoo-price-predictor', mlflow=True)
+# mlflow.set_tracking_uri('https://dagshub.com/girishsai758/yahoo-price-predictor.mlflow')
+# dagshub.init(repo_owner='girishsai758', repo_name='yahoo-price-predictor', mlflow=True)
 # -------------------------------------------------------------------------------------
 class StockPricePredictor(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, output_size):
