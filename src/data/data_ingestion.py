@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 pd.set_option('future.no_silent_downcasting', True)
 
-import os
+
 from sklearn.model_selection import train_test_split
 import yaml
 import logging
