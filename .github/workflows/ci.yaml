@@ -40,6 +40,10 @@ jobs:
           echo "MLFLOW_TRACKING_PASSWORD=$YAHOO" >> $GITHUB_ENV
 
       - name: 🏃 Run DVC Pipeline (`dvc repro`)
+        env:
+          MLFLOW_TRACKING_USERNAME: ${{ secrets.YAHOO }}
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.YAHOO }}
+          YAHOO: ${{ secrets.YAHOO }}
         run: dvc repro
 
   # ----------------------------------------------------------------------
