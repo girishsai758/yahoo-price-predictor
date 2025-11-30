@@ -12,8 +12,9 @@ WORKDIR /tmp/app
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 
-# Copy requirements file (Ensure it's requirements.txt or rename requirements1.txt)
-COPY requirements1.txt .
+# Copy your requirements file
+# NOTE: Ensure you use 'requirements.txt' or 'requirements1.txt' as appropriate.
+COPY flaskapp/requirements1.txt .
 
 # Install dependencies using --no-cache-dir
 # Since we are using the PyTorch image, we only install the *rest* of the dependencies.
