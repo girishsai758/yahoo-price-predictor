@@ -19,7 +19,7 @@ warnings.filterwarnings("ignore")
 # Below code block is for production use
 # -------------------------------------------------------------------------------------
 # # Set up DagsHub credentials for MLflow tracking
-dagshub_token = os.getenv("yahoo")
+dagshub_token = os.getenv("YAHOO")
 if not dagshub_token:
     raise EnvironmentError("yahoo environment variable is not set")
 
