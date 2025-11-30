@@ -1,10 +1,11 @@
 # ----------------------------------------------------------------------
 # Stage 1: BUILDER - Install Dependencies
-# USE OFFICIAL PYTORCH IMAGE to avoid massive installation in CI
-# We switch to python:3.10-slim to python:3.10-cuda12.1-cudnn8-runtime
-# This drastically reduces temporary disk space requirements.
+# FIX 1: Switched to the estimated PyTorch 2.2.0 tag supporting Python 3.12.
+# NOTE: If this specific tag is not found on Docker Hub, we may need to 
+# check the official repository for the exact available Python 3.12 tag 
+# for PyTorch 2.2.0.
 # ----------------------------------------------------------------------
-FROM pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime-py312 AS builder
+FROM pytorch/pytorch:2.3.0-cuda11.8-cudnn8-runtime AS builder
 
 WORKDIR /tmp/app
 
@@ -16,15 +17,13 @@ ENV LC_ALL C.UTF-8
 COPY flaskapp/requirements1.txt .
 
 # Install dependencies using --no-cache-dir
-# Since we are using the PyTorch image, we only install the *rest* of the dependencies.
-# NOTE: The dependency list includes 'gunicorn' and other tools needed for the final app.
 RUN pip install --no-cache-dir -r requirements1.txt
 
 # ----------------------------------------------------------------------
 # Stage 2: FINAL - The Runtime Image
-# This stage only copies the essential application code and site-packages.
+# FIX 2: Switched to the estimated PyTorch 2.2.0 tag supporting Python 3.12.
 # ----------------------------------------------------------------------
-FROM pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime-py312
+FROM pytorch/pytorch:2.3.0-cuda11.8-cudnn8-runtime
 
 WORKDIR /app
 

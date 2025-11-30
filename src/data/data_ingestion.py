@@ -9,7 +9,6 @@ import yaml
 import logging
 import sys
 import os
-
 #since src.logger is not working we are adding the project root manually
 # Add project root to path
 project_root =os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
