@@ -24,17 +24,14 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY flaskapp/ /app/
+# Copy installed site-packages from the builder stage
+# This is the line that transfers only the installed Python dependencies
+COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
 
+# Copy your application files and artifacts
+COPY flaskapp/ /app/
 COPY artifacts/scaler.pkl /app/artifacts/scaler.pkl
 
-# After:
-RUN pip install --no-cache-dir -r requirements.txt
-
-EXPOSE 5000
-
-#local
-CMD ["python", "app.py"]  
-
-# #Prod
-# CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "120", "app:app"]
+# Your application-specific commands
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"] 
+# Assuming you use Gunicorn or similar WSGI server
