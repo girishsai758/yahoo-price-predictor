@@ -4,7 +4,7 @@
 # We switch to python:3.10-slim to python:3.10-cuda12.1-cudnn8-runtime
 # This drastically reduces temporary disk space requirements.
 # ----------------------------------------------------------------------
-FROM pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime AS builder
+FROM pytorch/pytorch:2.5.1-cuda12.1-cudnn8-runtime AS builder
 
 WORKDIR /tmp/app
 
@@ -24,7 +24,7 @@ RUN pip install --no-cache-dir -r requirements1.txt
 # Stage 2: FINAL - The Runtime Image
 # This stage only copies the essential application code and site-packages.
 # ----------------------------------------------------------------------
-FROM pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime
+FROM pytorch/pytorch:2.5.1-cuda12.1-cudnn8-runtime
 
 WORKDIR /app
 
@@ -36,5 +36,6 @@ COPY --from=builder /usr/local/lib/python3.10/site-packages/ /usr/local/lib/pyth
 COPY flaskapp/ /app/
 COPY artifacts/scaler.pkl /app/artifacts/scaler.pkl
 
-# Your application-specific commands
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+# Set the entry point for your Flask application
+ENTRYPOINT ["/usr/local/bin/gunicorn"]
+CMD ["--bind", "0.0.0.0:5000", "app:app"]
