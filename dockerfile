@@ -30,8 +30,8 @@ FROM pytorch/pytorch:2.5.1-cuda12.1-cudnn8-runtime
 WORKDIR /app
 
 # Copy installed site-packages from the builder stage
-# This copies all non-PyTorch dependencies (like Flask, DVC, etc.)
-COPY --from=builder /usr/local/lib/python3.10/site-packages/ /usr/local/lib/python3.10/site-packages/
+# This transfers only the necessary Python dependencies installed in Stage 1.
+COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
 
 # Copy your application files and artifacts
 COPY flaskapp/ /app/
