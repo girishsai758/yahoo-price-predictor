@@ -22,7 +22,7 @@ import torch.nn as nn
 from sklearn.metrics import mean_squared_error
 project_root =os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, project_root)
-from src.model.model_evaluation import evaluate_model
+
 
 from src.logger import logging
 from src.connections import s3_connections
