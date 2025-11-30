@@ -4,7 +4,7 @@
 # We switch to python:3.10-slim to python:3.10-cuda12.1-cudnn8-runtime
 # This drastically reduces temporary disk space requirements.
 # ----------------------------------------------------------------------
-FROM python:3.12-slim AS builder
+FROM pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime AS builder
 
 WORKDIR /tmp/app
 
