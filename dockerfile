@@ -6,9 +6,8 @@ COPY flaskapp/ /app/
 
 COPY artifacts/scaler.pkl /app/artifacts/scaler.pkl
 
-RUN pip install -r requirements.txt
-
-
+# After:
+RUN pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 5000
 
