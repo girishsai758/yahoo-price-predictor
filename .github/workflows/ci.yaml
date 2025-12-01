@@ -1,3 +1,94 @@
+# name: CI Pipeline
+
+# on: push
+
+# jobs:
+#   # ----------------------------------------------------------------------
+#   # JOB 1: ML Pipeline Execution (Runs on GitHub-hosted Runner)
+#   # This job handles code checkout, dependency install, DVC execution, 
+#   # and MLflow logging, ensuring the model artifacts are created.
+#   # ----------------------------------------------------------------------
+#   ml-pipeline-run:
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 20
+
+#     steps:
+#       - name: 📦 Checkout code
+#         uses: actions/checkout@v3
+
+#       - name: 🐍 Setup Python 3.12
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: '3.12'
+
+#       - name: ⚙️ Cache pip dependencies
+#         uses: actions/cache@v3
+#         with:
+#           path: ~/.cache/pip
+#           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+#           restore-keys: |
+#             ${{ runner.os }}-pip-
+
+#       - name: 📥 Install all dependencies
+#         run: pip install -r requirements.txt
+
+#       - name: 🔑 Set up DVC and MLflow Tracking Credentials
+#         env:
+#           YAHOO: ${{ secrets.YAHOO }}
+#         run: |
+#           echo "MLFLOW_TRACKING_USERNAME=$YAHOO" >> $GITHUB_ENV
+#           echo "MLFLOW_TRACKING_PASSWORD=$YAHOO" >> $GITHUB_ENV
+
+#       - name: 🏃 Run DVC Pipeline (`dvc repro`)
+#         env:
+#           MLFLOW_TRACKING_USERNAME: ${{ secrets.YAHOO }}
+#           MLFLOW_TRACKING_PASSWORD: ${{ secrets.YAHOO }}
+#           YAHOO: ${{ secrets.YAHOO }}
+#         run: dvc repro
+
+#   # ----------------------------------------------------------------------
+#   # JOB 2: Docker Build and Push (Runs on Self-Hosted EC2 Runner)
+#   # This job handles the heavy Docker build where disk space is constrained.
+#   # You MUST set up your EC2 instance as a self-hosted runner with this label.
+#   # ----------------------------------------------------------------------
+#   docker-build-and-push:
+#     # CRITICAL: Target the self-hosted runner running on your EC2 instance
+#     runs-on: self-hosted
+#     needs: ml-pipeline-run # Ensure ML pipeline runs first
+
+#     steps:
+#       - name: 📦 Checkout code
+#         # Check out code again on the EC2 runner
+#         uses: actions/checkout@v3
+      
+#       - name: ☁️ Configure AWS Credentials
+#         uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+#           output-env-credentials: true
+          
+#       - name: 🔐 Login to AWS ECR
+#         run: |
+#           aws ecr get-login-password --region ${{ secrets.AWS_DEFAULT_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com
+
+#       - name: 🐳 Build Docker image
+#         # This build will use the ample disk space of your EC2 instance
+#         run: |
+#           docker build -t ${{ secrets.ECR_REPO }}:latest .
+
+#       - name: 🏷️ Tag Docker image
+#         run: |
+#           docker tag ${{ secrets.ECR_REPO }}:latest \
+#           ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:latest
+          
+#       - name: 🚀 Push Docker image to ECR
+#         run: |
+#           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:latest
+
+
+
 name: CI Pipeline
 
 on: push
@@ -5,8 +96,6 @@ on: push
 jobs:
   # ----------------------------------------------------------------------
   # JOB 1: ML Pipeline Execution (Runs on GitHub-hosted Runner)
-  # This job handles code checkout, dependency install, DVC execution, 
-  # and MLflow logging, ensuring the model artifacts are created.
   # ----------------------------------------------------------------------
   ml-pipeline-run:
     runs-on: ubuntu-latest
@@ -48,8 +137,6 @@ jobs:
 
   # ----------------------------------------------------------------------
   # JOB 2: Docker Build and Push (Runs on Self-Hosted EC2 Runner)
-  # This job handles the heavy Docker build where disk space is constrained.
-  # You MUST set up your EC2 instance as a self-hosted runner with this label.
   # ----------------------------------------------------------------------
   docker-build-and-push:
     # CRITICAL: Target the self-hosted runner running on your EC2 instance
@@ -68,13 +155,26 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
           output-env-credentials: true
+      
+      # --- NEW STEP: Pull DVC Artifacts ---
+      # This downloads the necessary artifacts (scaler.pkl, model_weights.pth)
+      # from the remote storage (S3/DagsHub) onto the EC2 runner's local disk.
+      - name: ⬇️ Install Python & Pull DVC Artifacts
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      - name: ⬇️ Install DVC and Pull Artifacts
+        run: |
+          pip install dvc[s3] 
+          dvc pull artifacts/scaler.pkl
+          
           
       - name: 🔐 Login to AWS ECR
         run: |
           aws ecr get-login-password --region ${{ secrets.AWS_DEFAULT_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com
 
       - name: 🐳 Build Docker image
-        # This build will use the ample disk space of your EC2 instance
+        # Now, the COPY command will find scaler.pkl locally.
         run: |
           docker build -t ${{ secrets.ECR_REPO }}:latest .
 
