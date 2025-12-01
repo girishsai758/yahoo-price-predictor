@@ -53,7 +53,7 @@ jobs:
   # ----------------------------------------------------------------------
   docker-build-and-push:
     # CRITICAL: Target the self-hosted runner running on your EC2 instance
-    runs-on: self-hosted-ec2
+    runs-on: self-hosted
     needs: ml-pipeline-run # Ensure ML pipeline runs first
 
     steps:
