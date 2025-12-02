@@ -36,10 +36,9 @@ COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/pyth
 COPY flaskapp/ /app/
 # Ensure artifacts are present locally via DVC pull before the build
 COPY artifacts/scaler.pkl /app/artifacts/scaler.pkl
-COPY artifacts/model_weights.pth /app/artifacts/model_weights.pth
 
-# Set environment variable for Flask app 
-ENV FLASK_APP=app.py
+
+
 
 # Expose the port for the Flask app
 EXPOSE 5000
