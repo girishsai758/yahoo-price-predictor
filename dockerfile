@@ -1,38 +1,48 @@
 # ----------------------------------------------------------------------
 # Stage 1: BUILDER - Install Dependencies
-# FIX 1: Switched to the estimated PyTorch 2.2.0 tag supporting Python 3.12.
-# NOTE: If this specific tag is not found on Docker Hub, we may need to 
-# check the official repository for the exact available Python 3.12 tag 
-# for PyTorch 2.2.0.
+# CRITICAL: Using official Python 3.12 Slim image to ensure version compliance.
+# This forces us to install PyTorch via pip, which is the necessary trade-off.
 # ----------------------------------------------------------------------
-FROM pytorch/pytorch:2.3.0-cuda11.8-cudnn8-runtime AS builder
+FROM python:3.12-slim AS builder
 
-WORKDIR /tmp/app
+# Set the working directory for dependency installation
+WORKDIR /tmp/requirements
 
 # Set locale environment variables to avoid locale warnings
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 
-# Copy requirements file (Ensure it's requirements.txt)
+# Copy requirements file 
 COPY flaskapp/requirements1.txt .
 
-# Install dependencies using --no-cache-dir
+# Install dependencies using --no-cache-dir.
+# This stage installs all necessary dependencies into the /usr/local/lib/python3.12/site-packages directory.
 RUN pip install --no-cache-dir -r requirements1.txt
 
 # ----------------------------------------------------------------------
 # Stage 2: FINAL - The Runtime Image
-# FIX 2: Switched to the estimated PyTorch 2.2.0 tag supporting Python 3.12.
+# CRITICAL: Use the same lightweight Python 3.12 base for a clean, minimal runtime environment.
 # ----------------------------------------------------------------------
-FROM pytorch/pytorch:2.3.0-cuda11.8-cudnn8-runtime
+FROM python:3.12-slim
 
+# Set the application's main working directory
 WORKDIR /app
 
-# FIX 3: Copy installed site-packages from the Python 3.12 directory
-COPY --from=builder /usr/local/lib/python3.12/dist-packages/ /usr/local/lib/python3.12/dist-packages/
+# FIX: Copy installed site-packages from the builder stage.
+# Since we are using python:3.12-slim, the standard site-packages path is correct!
+COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
 
 # Copy your application files and artifacts
 COPY flaskapp/ /app/
+# Ensure artifacts are present locally via DVC pull before the build
 COPY artifacts/scaler.pkl /app/artifacts/scaler.pkl
+COPY artifacts/model_weights.pth /app/artifacts/model_weights.pth
 
-# Your application-specific commands
+# Set environment variable for Flask app 
+ENV FLASK_APP=app.py
+
+# Expose the port for the Flask app
+EXPOSE 5000
+
+# Your application-specific commands: Run Gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
