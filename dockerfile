@@ -28,7 +28,7 @@ FROM pytorch/pytorch:2.3.0-cuda11.8-cudnn8-runtime
 WORKDIR /app
 
 # FIX 3: Copy installed site-packages from the Python 3.12 directory
-COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
+COPY --from=builder /usr/local/lib/python3.12/dist-packages/ /usr/local/lib/python3.12/dist-packages/
 
 # Copy your application files and artifacts
 COPY flaskapp/ /app/
