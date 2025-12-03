@@ -33,7 +33,7 @@ spec:
           value: "https://dagshub.com/girishsai758/yahoo-price-predictor.mlflow" # REPLACE with your actual MLflow URI
         
         # 2. MLFLOW Tracking Token (Required for authenticated access to MLflow)
-        - name: MLFLOW_TRACKING_TOKEN
+        - name: YAHOO
           valueFrom:
             secretKeyRef:
               # This assumes you created a Kubernetes secret named 'mlflow-token-secret' 
