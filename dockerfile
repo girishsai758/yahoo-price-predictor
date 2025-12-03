@@ -1,7 +1,6 @@
 # ----------------------------------------------------------------------
 # Stage 1: BUILDER - Install Dependencies
 # CRITICAL: Using official Python 3.12 Slim image to ensure version compliance.
-# This forces us to install PyTorch via pip, which is the necessary trade-off.
 # ----------------------------------------------------------------------
 FROM python:3.12-slim AS builder
 
@@ -38,10 +37,9 @@ COPY flaskapp/ /app/
 COPY artifacts/scaler.pkl /app/artifacts/scaler.pkl
 
 
-
-
 # Expose the port for the Flask app
 EXPOSE 5000
 
-# Your application-specific commands: Run Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+# FIX: Run Gunicorn using 'python -m' to ensure the executable is found in the container's environment.
+# This fixes the "exec: gunicorn: executable file not found in $PATH" error.
+CMD ["python", "-m", "gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
