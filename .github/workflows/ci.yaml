@@ -345,9 +345,6 @@ jobs:
          
           kubectl apply -f deployment.yaml
           
-          kubectl set image deployment/stock-price-predictor app=$IMAGE_URI -n default 
           
-          
-          kubectl rollout status deployment/stock-price-predictor -n default
           
           echo "EKS Deployment successful."
