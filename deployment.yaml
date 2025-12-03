@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: flaskapp
-        image: 020866158197.dkr.ecr.us-east-1.amazonaws.com/flaskapp:latest
+        image: 020866158197.dkr.ecr.us-east-1.amazonaws.com/yahoo:latest
         ports:
         - containerPort: 5000
         resources:
