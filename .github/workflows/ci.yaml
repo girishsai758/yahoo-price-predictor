@@ -314,7 +314,7 @@ jobs:
       - name: 🧰 Configure kubeconfig for EKS
         # Uses the AWS CLI to update the kubeconfig file.
         run: |
-          aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_DEFAULT_REGION }}
+          aws eks update-kubeconfig --name flask-app-cluster --region ${{ secrets.AWS_DEFAULT_REGION }}
 
       - name: 🔑 Create Kubernetes MLflow Secret
         # This secret holds the MLflow access token required by the application 
