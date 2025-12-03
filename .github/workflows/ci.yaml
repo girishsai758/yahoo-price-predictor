@@ -89,6 +89,105 @@
 
 
 
+# name: CI Pipeline
+
+# on: push
+
+# jobs:
+#   # ----------------------------------------------------------------------
+#   # JOB 1: ML Pipeline Execution (Runs on GitHub-hosted Runner)
+#   # ----------------------------------------------------------------------
+#   ml-pipeline-run:
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 20
+
+#     steps:
+#       - name: 📦 Checkout code
+#         uses: actions/checkout@v3
+
+#       - name: 🐍 Setup Python 3.12
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: '3.12'
+
+#       - name: ⚙️ Cache pip dependencies
+#         uses: actions/cache@v3
+#         with:
+#           path: ~/.cache/pip
+#           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+#           restore-keys: |
+#             ${{ runner.os }}-pip-
+
+#       - name: 📥 Install all dependencies
+#         run: pip install -r requirements.txt
+
+#       - name: 🔑 Set up DVC and MLflow Tracking Credentials
+#         env:
+#           YAHOO: ${{ secrets.YAHOO }}
+#         run: |
+#           echo "MLFLOW_TRACKING_USERNAME=$YAHOO" >> $GITHUB_ENV
+#           echo "MLFLOW_TRACKING_PASSWORD=$YAHOO" >> $GITHUB_ENV
+
+#       - name: 🏃 Run DVC Pipeline (`dvc repro`)
+#         env:
+#           MLFLOW_TRACKING_USERNAME: ${{ secrets.YAHOO }}
+#           MLFLOW_TRACKING_PASSWORD: ${{ secrets.YAHOO }}
+#           YAHOO: ${{ secrets.YAHOO }}
+#         run: dvc repro
+
+#   # ----------------------------------------------------------------------
+#   # JOB 2: Docker Build and Push (Runs on Self-Hosted EC2 Runner)
+#   # ----------------------------------------------------------------------
+#   docker-build-and-push:
+#     # CRITICAL: Target the self-hosted runner running on your EC2 instance
+#     runs-on: self-hosted
+#     needs: ml-pipeline-run # Ensure ML pipeline runs first
+
+#     steps:
+#       - name: 📦 Checkout code
+#         # Check out code again on the EC2 runner
+#         uses: actions/checkout@v3
+      
+#       - name: ☁️ Configure AWS Credentials
+#         uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+#           output-env-credentials: true
+      
+#       # --- NEW STEP: Pull DVC Artifacts ---
+#       # This downloads the necessary artifacts (scaler.pkl, model_weights.pth)
+#       # from the remote storage (S3/DagsHub) onto the EC2 runner's local disk.
+#       - name: ⬇️ Install Python & Pull DVC Artifacts
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: '3.12'
+#       - name: ⬇️ Install DVC and Pull Artifacts
+#         run: |
+#           pip install dvc[s3] 
+#           dvc pull artifacts/scaler.pkl
+          
+          
+#       - name: 🔐 Login to AWS ECR
+#         run: |
+#           aws ecr get-login-password --region ${{ secrets.AWS_DEFAULT_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com
+
+#       - name: 🐳 Build Docker image
+#         # Now, the COPY command will find scaler.pkl locally.
+#         run: |
+#           docker build -t ${{ secrets.ECR_REPO }}:latest .
+
+#       - name: 🏷️ Tag Docker image
+#         run: |
+#           docker tag ${{ secrets.ECR_REPO }}:latest \
+#           ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:latest
+          
+#       - name: 🚀 Push Docker image to ECR
+#         run: |
+#           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:latest
+
+
 name: CI Pipeline
 
 on: push
@@ -136,16 +235,17 @@ jobs:
         run: dvc repro
 
   # ----------------------------------------------------------------------
-  # JOB 2: Docker Build and Push (Runs on Self-Hosted EC2 Runner)
+  # JOB 2: Docker Build and Push (Runs ONLY on Self-Hosted EC2 Runner)
   # ----------------------------------------------------------------------
   docker-build-and-push:
-    # CRITICAL: Target the self-hosted runner running on your EC2 instance
     runs-on: self-hosted
-    needs: ml-pipeline-run # Ensure ML pipeline runs first
+    needs: ml-pipeline-run
+    # Set the ECR image URI as an output variable for the next job (Job 3)
+    outputs:
+      image_uri: ${{ steps.build-tag-push.outputs.image_uri }}
 
     steps:
       - name: 📦 Checkout code
-        # Check out code again on the EC2 runner
         uses: actions/checkout@v3
       
       - name: ☁️ Configure AWS Credentials
@@ -156,9 +256,6 @@ jobs:
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
           output-env-credentials: true
       
-      # --- NEW STEP: Pull DVC Artifacts ---
-      # This downloads the necessary artifacts (scaler.pkl, model_weights.pth)
-      # from the remote storage (S3/DagsHub) onto the EC2 runner's local disk.
       - name: ⬇️ Install Python & Pull DVC Artifacts
         uses: actions/setup-python@v4
         with:
@@ -173,16 +270,84 @@ jobs:
         run: |
           aws ecr get-login-password --region ${{ secrets.AWS_DEFAULT_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com
 
-      - name: 🐳 Build Docker image
-        # Now, the COPY command will find scaler.pkl locally.
+      - name: 🐳 Build, Tag, and Push Docker image
+        id: build-tag-push # ID is needed to set the output variable
         run: |
-          docker build -t ${{ secrets.ECR_REPO }}:latest .
-
-      - name: 🏷️ Tag Docker image
-        run: |
-          docker tag ${{ secrets.ECR_REPO }}:latest \
-          ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:latest
+          IMAGE_URI="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:latest"
           
-      - name: 🚀 Push Docker image to ECR
+          echo "--- Building Docker Image ---"
+          docker build -t ${{ secrets.ECR_REPO }}:latest .
+          
+          echo "--- Tagging Docker Image ---"
+          docker tag ${{ secrets.ECR_REPO }}:latest $IMAGE_URI
+          
+          echo "--- Pushing Docker Image to ECR ---"
+          docker push $IMAGE_URI
+          
+          # Set the image URI as an output variable for the next job
+          echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
+
+  # ----------------------------------------------------------------------
+  # JOB 3: EKS Deployment (Moves back to GitHub-hosted Runner)
+  # ----------------------------------------------------------------------
+  eks-deploy:
+    runs-on: ubuntu-latest
+    needs: docker-build-and-push # Depends on the image being built and pushed
+    
+    steps:
+      - name: 📦 Checkout code (Needed for k8s manifests)
+        uses: actions/checkout@v3
+
+      - name: ☁️ Configure AWS Credentials
+        # Configure AWS on the GitHub runner for EKS access
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: 🛠️ Install kubectl
+        uses: azure/setup-kubectl@v3 # Using the cleaner action for the GH runner
+        with:
+          version: 'latest'
+
+      - name: 🧰 Configure kubeconfig for EKS
+        # Uses the AWS CLI to update the kubeconfig file.
         run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:latest
+          aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: 🔑 Create Kubernetes MLflow Secret
+        # This secret holds the MLflow access token required by the application 
+          # to fetch the model from the remote tracking server.
+          # We assume the GitHub secret is named MLFLOW_TRACKING_TOKEN.
+        run: |
+          
+          kubectl create secret generic mlflow-token-secret \
+            --from-literal=YAHOO=${{ secrets.YAHOO }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: 🚀 Deploy to EKS (Set Image and Rollout)
+        # Retrieve the ECR image URI from the output of the previous job
+         # Apply the manifest first (if it doesn't exist, this creates the Deployment)
+          # Assuming manifest is located at k8s/deployment.yaml
+          # Force the deployment to use the new image tag.
+          # Assumes the deployment name is 'stock-price-predictor' and container is 'app'.
+          # NOTE: You must ensure your k8s/deployment.yaml is configured to load 
+          # the 'mlflow-token-secret' values as environment variables (e.g., YAHOO).
+          # Wait for the rollout to complete
+          
+        run: |
+          
+          IMAGE_URI="${{ needs.docker-build-and-push.outputs.image_uri }}"
+          
+          echo "Starting EKS deployment with image: $IMAGE_URI"
+          
+         
+          kubectl apply -f deployment.yaml
+          
+          kubectl set image deployment/stock-price-predictor app=$IMAGE_URI -n default 
+          
+          
+          kubectl rollout status deployment/stock-price-predictor -n default
+          
+          echo "EKS Deployment successful."
