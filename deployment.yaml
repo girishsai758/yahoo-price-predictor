@@ -27,6 +27,21 @@ spec:
             memory: "512Mi"
             cpu: "1"
         env:
+        # --- FIX: Environment variables needed for the app.py to connect to MLflow ---
+        # 1. MLFLOW Tracking URI
+        - name: MLFLOW_TRACKING_URI
+          value: "https://dagshub.com/girishsai758/yahoo-price-predictor.mlflow" # REPLACE with your actual MLflow URI
+        
+        # 2. MLFLOW Tracking Token (Required for authenticated access to MLflow)
+        - name: MLFLOW_TRACKING_TOKEN
+          valueFrom:
+            secretKeyRef:
+              # This assumes you created a Kubernetes secret named 'mlflow-token-secret' 
+              # with a key named 'MLFLOW_TRACKING_TOKEN' in your CI pipeline.
+              name: mlflow-token-secret
+              key: YAHOO
+              
+        # 3. Your application-specific YAHOO secret (carried over from previous YAML)
         - name: YAHOO
           valueFrom:
             secretKeyRef:

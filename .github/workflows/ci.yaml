@@ -273,7 +273,7 @@ jobs:
       - name: 🐳 Build, Tag, and Push Docker image
         id: build-tag-push # ID is needed to set the output variable
         run: |
-          IMAGE_URI="452843392996.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:latest"
+          IMAGE_URI="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com/${{ secrets.ECR_REPO }}:latest"
           
           echo "--- Building Docker Image ---"
           docker build -t ${{ secrets.ECR_REPO }}:latest .
