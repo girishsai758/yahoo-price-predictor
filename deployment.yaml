@@ -41,12 +41,7 @@ spec:
               name: mlflow-token-secret
               key: YAHOO
               
-        # 3. Your application-specific YAHOO secret (carried over from previous YAML)
-        - name: YAHOO
-          valueFrom:
-            secretKeyRef:
-              name: mlflow-token-secret
-              key: YAHOO
+        
 
 ---
 apiVersion: v1
