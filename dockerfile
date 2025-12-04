@@ -28,7 +28,7 @@ WORKDIR /app
 
 # CRITICAL FIX: The PyTorch image likely uses Python 3.10, not 3.12.
 # We are changing the path from python3.12 to python3.10.
-COPY --from=builder /usr/local/lib/python3.12/dist-packages/ /usr/local/lib/python3.12/dist-packages/
+COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
 
 # Copy your application files and artifacts
 COPY flaskapp/ /app/
@@ -36,8 +36,6 @@ COPY flaskapp/ /app/
 COPY artifacts/scaler.pkl /app/artifacts/scaler.pkl
 
 
-# Set environment variable for Flask app (optional, but good practice)
-ENV FLASK_APP=app.py
 
 # Expose the port for the Flask app
 EXPOSE 5000
