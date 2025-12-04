@@ -20,10 +20,11 @@ COPY flaskapp/requirements1.txt .
 # NOTE ON WARNING: If your requirements file contains 'torch', 'torchvision', or 'torchaudio',
 # this step will uninstall the pre-installed versions, which leads to a dependency conflict 
 # warning. It is best practice to remove these core libraries from requirements1.txt if the base image provides them.
-RUN pip install --no-cache-dir -r requirements1.txt \
-    # DEBUG STEP: The packages are not in /usr/local/lib, check /opt/conda
-    && echo "DEBUG: Installed packages path is likely /opt/conda/lib/python3.12/site-packages" 
-
+# between these packages and the base image's Python environment.
+RUN pip install --no-cache-dir setuptools wheel && \
+    pip install --upgrade numpy scipy scikit-learn && \
+    # Install remaining application dependencies
+    pip install --no-cache-dir -r requirements1.txt
 # ----------------------------------------------------------------------
 # Stage 2: FINAL - The Runtime Image
 # Using the specified PyTorch image for the runtime environment.
