@@ -1,50 +1,4 @@
 # # ----------------------------------------------------------------------
-# # Stage 1: BUILDER - Install Dependencies
-# # CRITICAL: Using official Python 3.12 Slim image to ensure version compliance.
-# # ----------------------------------------------------------------------
-# FROM python:3.12-slim AS builder
-
-# # Set the working directory for dependency installation
-# WORKDIR /tmp/requirements
-
-# # Set locale environment variables to avoid locale warnings
-# ENV LANG C.UTF-8
-# ENV LC_ALL C.UTF-8
-
-# # Copy requirements file 
-# COPY flaskapp/requirements1.txt .
-
-# # Install dependencies using --no-cache-dir.
-# # This stage installs all necessary dependencies into the /usr/local/lib/python3.12/site-packages directory.
-# RUN pip install --no-cache-dir -r requirements1.txt
-
-# # ----------------------------------------------------------------------
-# # Stage 2: FINAL - The Runtime Image
-# # CRITICAL: Use the same lightweight Python 3.12 base for a clean, minimal runtime environment.
-# # ----------------------------------------------------------------------
-# FROM python:3.12-slim
-
-# # Set the application's main working directory
-# WORKDIR /app
-
-# # FIX: Copy installed site-packages from the builder stage.
-# # Since we are using python:3.12-slim, the standard site-packages path is correct!
-# COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
-
-# # Copy your application files and artifacts
-# COPY flaskapp/ /app/
-# # Ensure artifacts are present locally via DVC pull before the build
-# COPY artifacts/scaler.pkl /app/artifacts/scaler.pkl
-
-
-# # Expose the port for the Flask app
-# EXPOSE 5000
-
-# # FIX: Run Gunicorn using 'python -m' to ensure the executable is found in the container's environment.
-# # This fixes the "exec: gunicorn: executable file not found in $PATH" error.
-# CMD ["python", "-m", "gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
-
-# ----------------------------------------------------------------------
 # Stage 1: BUILDER - Install Dependencies
 # CRITICAL: Using official Python 3.12 Slim image to ensure version compliance.
 # ----------------------------------------------------------------------
@@ -53,16 +7,11 @@ FROM python:3.12-slim AS builder
 # Set the working directory for dependency installation
 WORKDIR /tmp/requirements
 
-# Install setuptools FIRST, before other dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+# Set locale environment variables to avoid locale warnings
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
 
-# Install setuptools and wheel first (required for building some packages)
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
-
-# Copy and install requirements
+# Copy requirements file 
 COPY flaskapp/requirements1.txt .
 
 # Install dependencies using --no-cache-dir.
@@ -78,15 +27,11 @@ FROM python:3.12-slim
 # Set the application's main working directory
 WORKDIR /app
 
-# Install minimal system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy installed packages from builder
+# FIX: Copy installed site-packages from the builder stage.
+# Since we are using python:3.12-slim, the standard site-packages path is correct!
 COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
-COPY --from=builder /usr/local/bin/ /usr/local/bin/
 
-# Copy application files
+# Copy your application files and artifacts
 COPY flaskapp/ /app/
 # Ensure artifacts are present locally via DVC pull before the build
 COPY artifacts/scaler.pkl /app/artifacts/scaler.pkl
@@ -98,3 +43,47 @@ EXPOSE 5000
 # FIX: Run Gunicorn using 'python -m' to ensure the executable is found in the container's environment.
 # This fixes the "exec: gunicorn: executable file not found in $PATH" error.
 CMD ["python", "-m", "gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+
+# ----------------------------------------------------------------------
+# Stage 1: BUILDER - Install Dependencies
+# CRITICAL: Using official Python 3.12 Slim image to ensure version compliance.
+# ----------------------------------------------------------------------
+# FROM python:3.12-slim AS builder
+
+# WORKDIR /tmp/requirements
+
+# # Install setuptools FIRST, before other dependencies
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     gcc \
+#     g++ \
+#     && rm -rf /var/lib/apt/lists/*
+
+# # Install setuptools and wheel first (required for building some packages)
+# RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# # Copy and install requirements
+# COPY flaskapp/requirements1.txt .
+# RUN pip install --no-cache-dir -r requirements1.txt
+
+# # ----------------------------------------------------------------------
+# # Stage 2: FINAL - The Runtime Image
+# # ----------------------------------------------------------------------
+# FROM python:3.12-slim
+
+# WORKDIR /app
+
+# # Install minimal system dependencies
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     && rm -rf /var/lib/apt/lists/*
+
+# # Copy installed packages from builder
+# COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
+# COPY --from=builder /usr/local/bin/ /usr/local/bin/
+
+# # Copy application files
+# COPY flaskapp/ /app/
+# COPY artifacts/scaler.pkl /app/artifacts/scaler.pkl
+
+# EXPOSE 5000
+
+# CMD ["python", "-m", "gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
