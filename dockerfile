@@ -3,6 +3,7 @@
 # Stage 1: BUILDER - Install Dependencies
 # Using the specified PyTorch image for the build environment.
 # ----------------------------------------------------------------------
+# FIX: Using the user-specified PyTorch 2.8.0 image, compatible with Python 3.12
 FROM pytorch/pytorch:2.8.0-cuda12.6-cudnn9-runtime AS builder
 
 # Set the working directory for dependency installation
@@ -16,7 +17,12 @@ ENV LC_ALL C.UTF-8
 COPY flaskapp/requirements1.txt .
 
 # Install dependencies using --no-cache-dir
-RUN pip install --no-cache-dir -r requirements1.txt
+# NOTE ON WARNING: If your requirements file contains 'torch', 'torchvision', or 'torchaudio',
+# this step will uninstall the pre-installed versions, which leads to a dependency conflict 
+# warning. It is best practice to remove these core libraries from requirements1.txt if the base image provides them.
+RUN pip install --no-cache-dir -r requirements1.txt \
+    # DEBUG STEP: The packages are not in /usr/local/lib, check /opt/conda
+    && echo "DEBUG: Installed packages path is likely /opt/conda/lib/python3.12/site-packages" 
 
 # ----------------------------------------------------------------------
 # Stage 2: FINAL - The Runtime Image
@@ -26,9 +32,9 @@ FROM pytorch/pytorch:2.8.0-cuda12.6-cudnn9-runtime
 
 WORKDIR /app
 
-# CRITICAL FIX: The PyTorch image likely uses Python 3.10, not 3.12.
-# We are changing the path from python3.12 to python3.10.
-COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
+# CRITICAL FIX 1: Change COPY path to the common Conda/PyTorch installation location.
+# This should fix the "not found" error by targeting the correct site-packages folder.
+COPY --from=builder /opt/conda/lib/python3.12/site-packages/ /opt/conda/lib/python3.12/site-packages/
 
 # Copy your application files and artifacts
 COPY flaskapp/ /app/
@@ -36,11 +42,14 @@ COPY flaskapp/ /app/
 COPY artifacts/scaler.pkl /app/artifacts/scaler.pkl
 
 
+# Set environment variable for Flask app (optional, but good practice)
+
 
 # Expose the port for the Flask app
 EXPOSE 5000
-# FIX: Run Gunicorn using 'python -m' to ensure the executable is found in the container's environment.
-# This fixes the "exec: gunicorn: executable file not found in $PATH" error.
+
+# CRITICAL FIX 2: Use Python module execution to ensure Gunicorn is always found 
+# in the environment path, fixing potential "gunicorn not found" issues.
 CMD ["python", "-m", "gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
 
 # ----------------------------------------------------------------------
