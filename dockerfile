@@ -34,7 +34,7 @@ WORKDIR /app
 
 # CRITICAL FIX 1: Change COPY path to the common Conda/PyTorch installation location.
 # This should fix the "not found" error by targeting the correct site-packages folder.
-COPY --from=builder /opt/conda/lib/python3.12/site-packages/ /opt/conda/lib/python3.12/site-packages/
+COPY --from=builder /opt/conda/lib/python3.11/site-packages/ /opt/conda/lib/python3.11/site-packages/
 
 # Copy your application files and artifacts
 COPY flaskapp/ /app/
