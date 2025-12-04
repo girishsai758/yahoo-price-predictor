@@ -1,8 +1,9 @@
 # # ----------------------------------------------------------------------
-# Stage 1: BUILDER - Install Dependencies
-# CRITICAL: Using official Python 3.12 Slim image to ensure version compliance.
 # ----------------------------------------------------------------------
-FROM python:3.12-slim AS builder
+# Stage 1: BUILDER - Install Dependencies
+# Using the specified PyTorch image for the build environment.
+# ----------------------------------------------------------------------
+FROM pytorch/pytorch:2.8.0-cuda12.6-cudnn9-runtime AS builder
 
 # Set the working directory for dependency installation
 WORKDIR /tmp/requirements
@@ -11,25 +12,23 @@ WORKDIR /tmp/requirements
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 
-# Copy requirements file 
+# Copy requirements file (using the filename found in your last message)
 COPY flaskapp/requirements1.txt .
 
-# Install dependencies using --no-cache-dir.
-# This stage installs all necessary dependencies into the /usr/local/lib/python3.12/site-packages directory.
+# Install dependencies using --no-cache-dir
 RUN pip install --no-cache-dir -r requirements1.txt
 
 # ----------------------------------------------------------------------
 # Stage 2: FINAL - The Runtime Image
-# CRITICAL: Use the same lightweight Python 3.12 base for a clean, minimal runtime environment.
+# Using the specified PyTorch image for the runtime environment.
 # ----------------------------------------------------------------------
-FROM python:3.12-slim
+FROM pytorch/pytorch:2.8.0-cuda12.6-cudnn9-runtime
 
-# Set the application's main working directory
 WORKDIR /app
 
-# FIX: Copy installed site-packages from the builder stage.
-# Since we are using python:3.12-slim, the standard site-packages path is correct!
-COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
+# CRITICAL FIX: The PyTorch image likely uses Python 3.10, not 3.12.
+# We are changing the path from python3.12 to python3.10.
+COPY --from=builder /usr/local/lib/python3.12/dist-packages/ /usr/local/lib/python3.12/dist-packages/
 
 # Copy your application files and artifacts
 COPY flaskapp/ /app/
@@ -37,16 +36,17 @@ COPY flaskapp/ /app/
 COPY artifacts/scaler.pkl /app/artifacts/scaler.pkl
 
 
+# Set environment variable for Flask app (optional, but good practice)
+ENV FLASK_APP=app.py
+
 # Expose the port for the Flask app
 EXPOSE 5000
-
 # FIX: Run Gunicorn using 'python -m' to ensure the executable is found in the container's environment.
 # This fixes the "exec: gunicorn: executable file not found in $PATH" error.
 CMD ["python", "-m", "gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
 
 # ----------------------------------------------------------------------
 # Stage 1: BUILDER - Install Dependencies
-# CRITICAL: Using official Python 3.12 Slim image to ensure version compliance.
 # ----------------------------------------------------------------------
 # FROM python:3.12-slim AS builder
 
