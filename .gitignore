@@ -94,7 +94,7 @@ docs/
 local_s3/
 
 models/
-artifacts/
-#scaler.pkl has been to moved to yahoo-price-predictor since it is not stored anywherwe.
+artifacts
+
 test.py/
 credentials.txt/
