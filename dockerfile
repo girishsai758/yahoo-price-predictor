@@ -35,7 +35,7 @@ COPY --from=builder /opt/conda/lib/python3.11/site-packages/ /opt/conda/lib/pyth
 
 # Copy your application files
 COPY flaskapp/ /app/
-COPY artifacts/scaler.pkl /app/artifacts/scaler.pkl
+COPY artifacts1/scaler.pkl /app/artifacts/scaler.pkl
 
 # Expose the port for the Flask app
 EXPOSE 5000

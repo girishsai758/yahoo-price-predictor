@@ -94,7 +94,7 @@ docs/
 local_s3/
 
 models/
-artifacts
 
+artifacts/
 test.py/
 credentials.txt/
