@@ -256,14 +256,14 @@ jobs:
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
           output-env-credentials: true
       
-      # - name: ⬇️ Install Python & Pull DVC Artifacts
-      #   uses: actions/setup-python@v4
-      #   with:
-      #     python-version: '3.12'
-      # - name: ⬇️ Install DVC and Pull Artifacts
-      #   run: |
-      #     pip install dvc[s3] 
-      #     dvc pull artifacts/scaler.pkl
+      - name: ⬇️ Install Python & Pull DVC Artifacts
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      - name: ⬇️ Install DVC and Pull Artifacts
+        run: |
+          pip install dvc[s3] 
+          dvc pull artifacts1/scaler.pkl
           
           
       - name: 🔐 Login to AWS ECR
