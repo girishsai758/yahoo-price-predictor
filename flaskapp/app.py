@@ -345,7 +345,7 @@ model_version = get_latest_model_version(model_name)
 model_uri = f'models:/{model_name}/{model_version}'
 print(f"Fetching model from: {model_uri}")
 model = mlflow.pytorch.load_model(model_uri)
-scaler_path_downloaded = 'app/artifacts/scaler.pkl'
+scaler_path_downloaded = '/app/artifacts/scaler.pkl'
 with open(scaler_path_downloaded, 'rb') as f:
             scaler = pickle.load(f)
             
